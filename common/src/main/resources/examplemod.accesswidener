@@ -1,0 +1,5 @@
+accessWidener v2 named
+
+# Access wideners provide a way to loosen the access limits of classes, methods or fields.
+# Access wideners are similar to the commonly known Access Transformers.
+# See more information here: https://wiki.fabricmc.net/tutorial:accesswideners
