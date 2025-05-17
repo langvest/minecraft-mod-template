@@ -44,14 +44,12 @@ dependencies {
 
 def MAIN_SOURCE_SET = sourceSets.main
 def MAIN_RESOURCES_PATH = "src/main/resources"
+def GENERATED_RESOURCES_PATH = "src/generated/resources"
 def ACCESS_TRANSFORMER_PATH = MAIN_RESOURCES_PATH + "/META-INF/accesstransformer.cfg"
-def MIXIN_REFMAP = mod_id + ".refmap.json"
 def MIXIN_COMMON_CONFIG = mod_id + ".mixins.json"
 def MIXIN_FORGE_CONFIG = mod_id + ".forge.mixins.json"
-def MIXIN_CONFIGS = MIXIN_COMMON_CONFIG + "," + MIXIN_FORGE_CONFIG
 
 mixin {
-	add MAIN_SOURCE_SET, MIXIN_REFMAP
 	config MIXIN_COMMON_CONFIG
 	config MIXIN_FORGE_CONFIG
 }
@@ -63,7 +61,7 @@ jar {
 		// As of 1.20.6 Forge no longer has reobf tasks. This has broken mixins adding configs correctly into the manifest file.
 		// See more information here: https://github.com/SpongePowered/MixinGradle/blob/f800b26d2b180d98d9aa9355e5b3086d71218508/src/main/groovy/org/spongepowered/asm/gradle/plugins/MixinExtension.groovy#L184
 		// Instead, we will do it ourselves.
-		attributes "MixinConfigs": MIXIN_CONFIGS
+		attributes "MixinConfigs": MIXIN_COMMON_CONFIG + "," + MIXIN_FORGE_CONFIG
 	}
 
 	exclude "*.accesswidener"
@@ -91,10 +89,12 @@ minecraft {
 	// This property allows configuring Gradle's ProcessResources task(s) to run on IDE output locations before launching the game.
 	// It is REQUIRED to be set to true for this template to function.
 	// See more information here: https://docs.gradle.org/current/dsl/org.gradle.language.jvm.tasks.ProcessResources.html
+	// NOTE: If 'true' calls processResources when in dev.
 	copyIdeResources = true
 
 	// Tell ForgeGradle to not automtically create the reobf tasks, as we now use Official mappings at runtime.
 	// If you don't use them at dev time then you'll have to fix your reobf yourself.
+	// NOTE: Forge 1.20.6+ uses official mappings at runtime, so we shouldn't reobf from official to SRG.
 	reobf = false
 
 	// This property enables access transformers for use in development.
@@ -110,7 +110,7 @@ minecraft {
 	runs {
 		// Applies to all the run configs below.
 		configureEach {
-			workingDirectory file("run")
+			ideaModule "${rootProject.name}.${project.name}.main"
 
 			// Recommended logging data for a userdev environment.
 			// The markers can be added/remove as needed separated by commas:
@@ -126,18 +126,47 @@ minecraft {
 		}
 
 		client {
+			workingDirectory file("runs/client")
+
 			taskName "runClient"
 
-			// Comma-separated list of namespaces to load gametests from. Empty = all namespaces.
 			property "forge.enabledGameTestNamespaces", mod_id
+
+			mods {
+				modClientRun {
+					source MAIN_SOURCE_SET
+				}
+			}
 		}
 
 		server {
+			workingDirectory file("runs/server")
+
 			taskName "runServer"
 
-			// Comma-separated list of namespaces to load gametests from. Empty = all namespaces.
 			property "forge.enabledGameTestNamespaces", mod_id
+
 			args "--nogui"
+
+			mods {
+				modServerRun {
+					source MAIN_SOURCE_SET
+				}
+			}
+		}
+
+		data {
+			workingDirectory file("runs/data")
+
+			args "--nogui", "--mod", mod_id, "--all", "--output", project(":common").file(GENERATED_RESOURCES_PATH), "--existing", project(":common").file(MAIN_RESOURCES_PATH)
+
+			taskName "generateData"
+
+			mods {
+				modDataRun {
+					source MAIN_SOURCE_SET
+				}
+			}
 		}
 	}
 }
@@ -147,8 +176,8 @@ minecraft {
 // And if we have it in multiple we have to do performance intensive hacks like having the UnionFileSystem.
 // This will eventually be migrated to ForgeGradle so modders don't need to manually do it. But that is later.
 sourceSets.each {
-	def provider = layout.buildDirectory.dir("sourcesSets/$it.name")
+	def dir = layout.buildDirectory.dir("sourcesSets/$it.name")
 
-	it.output.resourcesDir = provider
-	it.java.destinationDirectory = provider
+	it.output.resourcesDir = dir
+	it.java.destinationDirectory = dir
 }
