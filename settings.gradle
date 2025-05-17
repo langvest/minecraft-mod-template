@@ -1,26 +1,58 @@
-pluginManagement.repositories {
-	gradlePluginPortal()
-	mavenCentral()
+pluginManagement {
+	repositories {
+		// Connect the Fabric repository.
+		// See more information here: https://fabricmc.net
+		maven {
+			name = "Fabric"
+			url = "https://maven.fabricmc.net"
+		}
 
-	maven {
-		name = "Fabric"
-		url = "https://maven.fabricmc.net"
-	}
+		// Connect the NeoForge repository.
+		// See more information here: https://neoforged.net
+		maven {
+			name = "NeoForge"
+			url = "https://maven.neoforged.net/releases"
+		}
 
-	maven {
-		name = "NeoForge"
-		url = "https://maven.neoforged.net/releases"
-	}
+		// Connect the Forge repository.
+		// See more information here: https://minecraftforge.net
+		maven {
+			name = "Forge"
+			url = "https://maven.minecraftforge.net"
+		}
 
-	maven {
-		name = "Forge"
-		url = "https://maven.minecraftforge.net"
-	}
+		// Connect the SpongePowered repository.
+		// See more information here: https://spongepowered.org
+		maven {
+			name = "Sponge"
+			url = "https://repo.spongepowered.org/repository/maven-public"
+		}
 
-	maven {
-		name = "Sponge Snapshots"
-		url = "https://repo.spongepowered.org/repository/maven-public"
+		// Connect the ParchmentMC repository.
+		// See more information here: https://parchmentmc.org
+		maven {
+			name = "Parchment"
+			url = "https://maven.parchmentmc.org"
+		}
+
+		gradlePluginPortal()
+		mavenCentral()
 	}
 }
 
+plugins {
+	// This plugin enables automatic resolution and configuration of the Java Development Kit (JDK)
+	// for the project. It simplifies the management of JDK versions by allowing Gradle to
+	// automatically download and configure the required JDK from the Foojay repository based
+	// on the specified version. This ensures consistency across development environments and
+	// reduces the risk of compatibility issues.
+	// See more information here: https://github.com/gradle/foojay-toolchains
+	id "org.gradle.toolchains.foojay-resolver-convention" version "0.8.0"
+}
+
+// Set the name of the root project.
 rootProject.name = project_name
+
+// Connect all subprojects.
+include("common")
+include("forge")
